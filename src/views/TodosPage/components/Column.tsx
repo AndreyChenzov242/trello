@@ -1,31 +1,85 @@
 import React, { useState } from 'react';
-import { ColumnProps } from '../interfaces';
-import { TodoList } from './TodoList';
-import { useRootStore } from '../../../stores/root/RootHooks';
+import { CloseOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { Draggable } from 'react-beautiful-dnd';
 import { observer } from 'mobx-react-lite';
-import { makeTodo } from '../../../utils/makeTodo';
+import { Button, Input, Card } from 'antd';
 
-export const Column: React.FC<ColumnProps> = observer(({ column }) => {
+import { useRootStore } from '../../../stores/root/RootHooks';
+import { ColumnProps } from '../types';
+import { TodoList } from './TodoList';
+
+export const Column: React.FC<ColumnProps> = observer(({ column, index }) => {
+  const { id, name, todos } = column;
+
   const [inputValue, setInputValue] = useState('');
+
+  const { columnsStore, uiStore } = useRootStore();
+
+  const { addTodo, removeColumn } = columnsStore;
+
+  const { startColumnEditing } = uiStore;
 
   const onChange = (event: any) => {
     setInputValue(event.target.value);
   };
 
-  const { columnsStore } = useRootStore();
-
-  const { addTodo } = columnsStore;
+  const addTodoHandler = () => {
+    if (inputValue.trim() === '') return;
+    addTodo(id, inputValue);
+    setInputValue('');
+  };
 
   return (
-    <div className="column">
-      <div className="title">{column.name}</div>
-      <TodoList todos={column.todos} columnName={column.name} />
-      <div className="input-wrapper">
-        <input type="text" value={inputValue} onChange={onChange} />
-        <button onClick={() => addTodo(column.id, makeTodo(inputValue))}>
-          +
-        </button>
-      </div>
-    </div>
+    <Draggable draggableId={id} index={index}>
+      {(provided) => (
+        <Card
+          title={name}
+          size="small"
+          className="column"
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          ref={provided.innerRef}
+          extra={
+            <>
+              <Button
+                size="small"
+                type={'text'}
+                onClick={() => startColumnEditing(column)}
+              >
+                <EditOutlined />
+              </Button>
+              <Button
+                size="small"
+                type={'text'}
+                onClick={() => removeColumn(id)}
+              >
+                <CloseOutlined />
+              </Button>
+            </>
+          }
+        >
+          <div className="column-content">
+            <TodoList todos={todos} columnID={id} />
+
+            <Input.Group className="input-group">
+              <Input
+                type="text"
+                value={inputValue}
+                onChange={onChange}
+                placeholder="Type new task"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    addTodoHandler();
+                  }
+                }}
+              />
+              <Button type="primary" onClick={addTodoHandler}>
+                <PlusOutlined />
+              </Button>
+            </Input.Group>
+          </div>
+        </Card>
+      )}
+    </Draggable>
   );
 });

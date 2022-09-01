@@ -1,4 +1,3 @@
-import React from 'react';
 import { TodosPage } from './views/TodosPage';
 
 function App() {

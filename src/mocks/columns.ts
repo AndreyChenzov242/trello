@@ -1,17 +1,7 @@
-import { IColumn } from '../services/column/ColumnInterface';
+import { Column } from '../entities/Column';
 import { todos, todos2 } from './todos';
 
-export const columns = [
-  {
-    name: '1',
-    todos: todos,
-  },
-  {
-    name: '2',
-    todos: todos2,
-  },
-  {
-    name: 'third column',
-    todos: [],
-  },
+export const columns: Column[] = [
+  new Column('Todo', todos),
+  new Column('Done', todos2),
 ];

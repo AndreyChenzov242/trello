@@ -1,10 +1,9 @@
-import { type } from 'os';
-import { ITodo } from '../todo/TodoInterface';
+import { Todo } from '../entities/Todo';
 
 export interface IColumn {
   id: string;
   name: string;
-  todos?: ITodo[];
+  todos?: Todo[];
 }
 
 export type ColumnID = string;

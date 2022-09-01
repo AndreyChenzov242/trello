@@ -1,37 +1,30 @@
 import React from 'react';
 import { Draggable, Droppable } from 'react-beautiful-dnd';
 import { observer } from 'mobx-react-lite';
-import { TodoListProps } from '../interfaces';
+
+import { droppableType } from '../../../constants/dnd-board';
+import { TodoListProps } from '../types';
+import { Todo } from './Todo';
 
 export const TodoList: React.FC<TodoListProps> = observer(
-  ({ todos, columnName }) => {
-    todos?.forEach((todo) => {
-      console.log('TodoList: todo.id', todo.id);
-      console.log('TodoList: todo.text', todo.text);
-    });
+  ({ todos, columnID }) => {
+    const mappedTodos = todos!.map((todo, index) => (
+      <Draggable key={todo.id} draggableId={todo.id} index={index}>
+        {(provided) => (
+          <Todo todo={todo} columnID={columnID} provided={provided} />
+        )}
+      </Draggable>
+    ));
 
     return (
-      <Droppable droppableId={columnName}>
+      <Droppable droppableId={columnID} type={droppableType.todo}>
         {(provided) => (
           <ul
             className="list"
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            {todos?.map((todo, index) => (
-              <Draggable key={todo.id} draggableId={todo.id} index={index}>
-                {(provided) => (
-                  <li
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    ref={provided.innerRef}
-                    className="list__item"
-                  >
-                    {todo.text}
-                  </li>
-                )}
-              </Draggable>
-            ))}
+            {mappedTodos}
             {provided.placeholder}
           </ul>
         )}

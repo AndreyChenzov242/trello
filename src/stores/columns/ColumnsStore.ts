@@ -1,41 +1,106 @@
-import { action, autorun, makeObservable, observable } from 'mobx';
-import { v4 as uuidv4 } from 'uuid';
+import { action, makeObservable, observable } from 'mobx';
+import { DropResult } from 'react-beautiful-dnd';
+
+import { ColumnID, IColumn } from '../../models/ColumnInterface';
+import { reorderArray } from '../../utils/reorderArray';
+import { Column } from '../../entities/Column';
 import { columns } from '../../mocks/columns';
-import { ColumnID, IColumn } from '../../services/column/ColumnInterface';
-import { ITodo } from '../../services/todo/TodoInterface';
+import { Todo } from '../../entities/Todo';
 
 export class ColumnsStore {
-  @observable columns: IColumn[] = [];
+  @observable columns: Column[] = [];
 
   constructor() {
     makeObservable(this);
 
-    this.columns = observable([new Column('first'), new Column('second')]);
+    this.columns = observable(columns);
   }
 
   @action.bound
-  addTodo(columnID: ColumnID, todo: ITodo) {
+  addTodo(columnID: ColumnID, todoText: string) {
     const index = this.columns.findIndex((column) => column.id === columnID);
 
-    this.columns[index].todos?.push(todo);
+    this.columns[index].todos?.push(new Todo(todoText));
   }
 
   @action.bound
-  addColumn(columnName: string) {
+  addColumn(columnName: ColumnID = 'New column') {
     this.columns.push(new Column(columnName));
   }
-}
 
-class Column {
-  id: string;
-  name: string;
-  @observable todos: ITodo[] = [];
+  @action.bound
+  removeColumn(columnID: ColumnID) {
+    const index = this.columns.findIndex((column) => column.id === columnID);
 
-  constructor(name: string, todos: ITodo[] = [], id = uuidv4()) {
-    makeObservable(this);
+    this.columns.splice(index, 1);
+  }
 
-    this.id = id;
-    this.name = name;
-    this.todos = todos;
+  @action.bound
+  removeTodo(columnID: ColumnID, todoID: string) {
+    const indexColumn = this.columns.findIndex(
+      (column) => column.id === columnID
+    );
+    const indexTodo = this.columns[indexColumn].todos!.findIndex(
+      (todo) => todo.id === todoID
+    );
+
+    this.columns[indexColumn].todos!.splice(indexTodo, 1);
+  }
+
+  @action.bound
+  moveColumns(result: DropResult) {
+    const { index: indexTodoFrom } = result.source;
+    const { index: indexTodoTo } = result.destination!;
+
+    this.columns = reorderArray(this.columns, indexTodoFrom, indexTodoTo);
+  }
+
+  @action.bound
+  moveTodos(result: DropResult) {
+    const { droppableId: idColumnFrom, index: indexTodoFrom } = result.source;
+    const { droppableId: idColumnTo, index: indexTodoTo } = result.destination!;
+
+    const indexColumnFrom = this.columns.findIndex(
+      (column) => column.id === idColumnFrom
+    );
+    const indexColumnTo = this.columns.findIndex(
+      (column) => column.id === idColumnTo
+    );
+
+    if (idColumnFrom === idColumnTo) {
+      this.columns[indexColumnFrom].todos = reorderArray(
+        this.columns[indexColumnFrom].todos!,
+        indexTodoFrom,
+        indexTodoTo
+      );
+    } else {
+      const item = this.columns[indexColumnFrom].todos!.splice(
+        indexTodoFrom,
+        1
+      )[0];
+      this.columns[indexColumnTo].todos!.splice(indexTodoTo, 0, item);
+    }
+  }
+
+  @action.bound
+  updateTodoText(columnID: ColumnID, todoID: string, text: string) {
+    const indexColumn = this.columns.findIndex(
+      (column) => column.id === columnID
+    );
+
+    const indexTodo = this.columns[indexColumn].todos!.findIndex(
+      (todo) => todo.id === todoID
+    );
+
+    this.columns[indexColumn].todos![indexTodo].text = text;
+  }
+
+  @action.bound
+  updateColumnName(incomeColumn: IColumn, name: string) {
+    const indexColumn = this.columns.findIndex(
+      (column) => column.id === incomeColumn.id
+    );
+
+    this.columns[indexColumn].name = name;
   }
 }
